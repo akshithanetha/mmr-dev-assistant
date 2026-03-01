@@ -1,0 +1,70 @@
+{
+  "name": "mmr-dev-assistant",
+  "displayName": "mmr-dev-assistant",
+  "description": "MMR Dev Assistant is an AI-powered development assistant that analyzes feature stories, detects impacted files, estimates story points, suggests clarifications, and can apply code and test changes directly within the IDE.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.109.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "mmrDev",
+          "title": "MMR Dev",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "mmrDev": [
+        {
+          "id": "mmrDev.sidebar",
+          "name": "Assistant",
+          "type": "webview"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "mmrDev.useSelection",
+        "title": "MMR: Use Selected Code in Assistant"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "mmrDev.useSelection",
+          "when": "editorHasSelection",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.109.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.39.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0"
+  },
+  "dependencies": {
+    "axios": "^1.13.6"
+  }
+}
