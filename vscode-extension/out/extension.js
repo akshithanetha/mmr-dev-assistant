@@ -220,10 +220,10 @@ body { display:flex; flex-direction:column; height:100vh; font-family:var(--vsco
 @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 .empty-state .logo { width:36px; height:36px; opacity:0.45; }
 .empty-state h4 { font-size:13px; font-weight:600; opacity:0.65; }
-.empty-state p { font-size:11px; opacity:0.4; line-height:1.6; }
+.empty-state p { font-size:12px; opacity:0.4; line-height:1.6; }
 .message { display:flex; flex-direction:column; gap:3px; animation:slideIn 0.18s ease; }
 @keyframes slideIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
-.message .label { font-size:10px; font-weight:700; opacity:0.45; text-transform:uppercase; letter-spacing:0.6px; padding:0 2px; }
+.message .label { font-size:12px; font-weight:700; opacity:0.45; text-transform:uppercase; letter-spacing:0.6px; padding:0 2px; }
 .message .bubble { padding:8px 10px; border-radius:6px; line-height:1.6; word-wrap:break-word; }
 .message.user .label { color:var(--vscode-textLink-foreground); }
 .message.user .bubble { background:var(--vscode-input-background); border:1px solid var(--vscode-input-border,transparent); white-space:pre-wrap; }
@@ -250,7 +250,7 @@ body { display:flex; flex-direction:column; height:100vh; font-family:var(--vsco
 .mode-btn { display:flex; align-items:center; gap:4px; padding:5px 10px; border:1px solid transparent; border-bottom:none; border-radius:5px 5px 0 0; background:transparent; color:var(--vscode-foreground); cursor:pointer; font-size:11px; font-family:var(--vscode-font-family); opacity:0.45; transition:opacity 0.15s,background 0.15s; white-space:nowrap; flex-shrink:0; user-select:none; }
 .mode-btn:hover { opacity:0.75; }
 .mode-btn.active { opacity:1; background:var(--vscode-input-background); border-color:var(--vscode-input-border,#444); border-bottom-color:var(--vscode-input-background); color:var(--vscode-focusBorder,#4fc3f7); }
-#mode-hint { font-size:10px; opacity:0.38; padding:4px 10px 0; font-style:italic; min-height:16px; }
+#mode-hint { font-size:12px; opacity:0.38; padding:4px 10px 0; font-style:italic; min-height:16px; }
 #textarea-row { display:flex; align-items:flex-end; gap:6px; padding:6px 8px; }
 #input { flex:1; resize:none; min-height:36px; max-height:140px; padding:8px 10px; font-family:var(--vscode-font-family); font-size:var(--vscode-font-size); background:var(--vscode-input-background); color:var(--vscode-input-foreground); border:1px solid var(--vscode-input-border,transparent); border-radius:6px; outline:none; overflow-y:auto; line-height:1.4; transition:border-color 0.15s; }
 #input:focus { border-color:var(--vscode-focusBorder); }
@@ -258,9 +258,9 @@ body { display:flex; flex-direction:column; height:100vh; font-family:var(--vsco
 #send-btn:hover { background:var(--vscode-button-hoverBackground); }
 #send-btn:disabled { opacity:0.35; cursor:not-allowed; }
 #action-chips { display:flex; flex-wrap:wrap; gap:5px; padding:0 8px 8px; }
-.action-chip { font-size:10px; padding:3px 9px; border-radius:20px; border:1px solid var(--vscode-input-border,#444); background:transparent; color:var(--vscode-foreground); cursor:pointer; opacity:0.55; font-family:var(--vscode-font-family); transition:opacity 0.15s,border-color 0.15s,background 0.15s; }
+.action-chip { font-size:12px; padding:3px 9px; border-radius:20px; border:1px solid var(--vscode-input-border,#444); background:transparent; color:var(--vscode-foreground); cursor:pointer; opacity:0.55; font-family:var(--vscode-font-family); transition:opacity 0.15s,border-color 0.15s,background 0.15s; }
 .action-chip:hover { opacity:1; border-color:var(--vscode-focusBorder); background:var(--vscode-input-background); }
-#use-selection-btn { display:flex; align-items:center; gap:4px; margin:0 8px 6px auto; padding:3px 9px; border-radius:4px; border:1px solid var(--vscode-input-border,#444); background:transparent; color:var(--vscode-foreground); cursor:pointer; font-size:10px; opacity:0.5; font-family:var(--vscode-font-family); transition:opacity 0.15s,border-color 0.15s; }
+#use-selection-btn { display:flex; align-items:center; gap:4px; margin:0 8px 6px auto; padding:3px 9px; border-radius:4px; border:1px solid var(--vscode-input-border,#444); background:transparent; color:var(--vscode-foreground); cursor:pointer; font-size:12px; opacity:0.5; font-family:var(--vscode-font-family); transition:opacity 0.15s,border-color 0.15s; }
 #use-selection-btn:hover { opacity:0.9; border-color:var(--vscode-focusBorder); }
 </style></head>
 <body>

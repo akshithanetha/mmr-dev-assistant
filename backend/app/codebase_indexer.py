@@ -1,7 +1,7 @@
 import os
-import re
+import chromadb
 from pathlib import Path
-from typing import Optional
+from chromadb.utils import embedding_functions
 
 # Directories to always skip
 SKIP_DIRS = {
@@ -9,155 +9,109 @@ SKIP_DIRS = {
     'vendor', '.bundle', 'public', 'storage'
 }
 
-# Priority dirs for deep indexing (full content read)
+# Priority dirs
 PRIORITY_DIRS = {'app/models', 'app/controllers', 'app/services'}
 
+# Initialize ChromaDB client
+CHROMA_DB_PATH = os.environ.get("CHROMA_DB_PATH", "./chroma_db")
+chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 
-def extract_ruby_definitions(content: str) -> dict:
-    """Extract class, module, concern names and their parent classes from Ruby file."""
-    definitions = {
-        'classes': [],
-        'modules': [],
-        'concerns': [],
-        'includes': [],
-        'belongs_to': [],
-        'has_many': [],
-        'has_one': [],
-        'scopes': [],
-        'methods': [],
-    }
+# Use Ollama for embeddings
+ollama_ef = embedding_functions.OllamaEmbeddingFunction(
+    url="http://localhost:11434/api/embeddings",
+    model_name="nomic-embed-text"
+)
 
-    for line in content.splitlines():
-        line = line.strip()
+collection = chroma_client.get_or_create_collection(
+    name="mmr_codebase",
+    embedding_function=ollama_ef
+)
 
-        m = re.match(r'^class\s+(\w+)(?:\s*<\s*(\S+))?', line)
-        if m:
-            definitions['classes'].append({
-                'name': m.group(1),
-                'parent': m.group(2) or ''
-            })
+def chunk_text(text: str, chunk_size: int = 1500, overlap: int = 200) -> list[str]:
+    chunks = []
+    start = 0
+    text_len = len(text)
+    while start < text_len:
+        end = min(start + chunk_size, text_len)
+        if end < text_len:
+            newline_pos = text.rfind('\n', start, end)
+            if newline_pos != -1 and newline_pos > start + chunk_size // 2:
+                end = newline_pos + 1
+        chunks.append(text[start:end])
+        start = end - overlap
+        if start < 0:
+            start = 0
+        if end >= text_len:
+            break
+    return chunks
 
-        m = re.match(r'^module\s+(\w+)', line)
-        if m:
-            definitions['modules'].append(m.group(1))
+def index_workspace(workspace_root: str):
+    """Walk the workspace and index all Ruby files into ChromaDB."""
+    if not workspace_root:
+        return
 
-        m = re.match(r'^include\s+(\S+)', line)
-        if m:
-            definitions['includes'].append(m.group(1))
+    # Check if we already have items to avoid re-indexing
+    # For a real extension, we would use file modification times.
+    if collection.count() > 0:
+        return
 
-        m = re.match(r'belongs_to\s+:(\w+)', line)
-        if m:
-            definitions['belongs_to'].append(m.group(1))
-
-        m = re.match(r'has_many\s+:(\w+)', line)
-        if m:
-            definitions['has_many'].append(m.group(1))
-
-        m = re.match(r'has_one\s+:(\w+)', line)
-        if m:
-            definitions['has_one'].append(m.group(1))
-
-        m = re.match(r'scope\s+:(\w+)', line)
-        if m:
-            definitions['scopes'].append(m.group(1))
-
-        m = re.match(r'def\s+(\w+)', line)
-        if m:
-            definitions['methods'].append(m.group(1))
-
-    return definitions
-
-
-def build_alias_map(index: dict) -> dict:
-    """
-    Build a map of common terms -> actual file paths.
-    e.g. 'care_team' -> 'app/models/member_program_care_extender.rb'
-    This helps the LLM understand domain aliases.
-    """
-    alias_map = {}
-
-    for rel_path, meta in index.items():
-        # Map class names to file paths
-        for cls in meta.get('definitions', {}).get('classes', []):
-            name = cls['name']
-            # snake_case version
-            snake = re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
-            alias_map[snake] = rel_path
-            alias_map[name.lower()] = rel_path
-
-        # Map the file stem itself
-        stem = Path(rel_path).stem
-        alias_map[stem] = rel_path
-
-    return alias_map
-
-
-def index_workspace(workspace_root: str) -> dict:
-    """
-    Walk the workspace and index all Ruby files.
-    Returns a dict of { relative_path -> metadata }
-    """
     root = Path(workspace_root)
-    index = {}
+    if not root.exists():
+        return
+
+    docs = []
+    metadatas = []
+    ids = []
 
     for ruby_file in root.rglob('*.rb'):
-        # Skip unwanted dirs
         parts = set(ruby_file.relative_to(root).parts)
         if parts & SKIP_DIRS:
             continue
 
-        rel_path = str(ruby_file.relative_to(root))
-
+        rel_path = str(ruby_file.relative_to(root)).replace('\\', '/')
         try:
             content = ruby_file.read_text(encoding='utf-8', errors='ignore')
         except Exception:
             continue
 
-        rel_posix = rel_path.replace('\\', '/')
-        is_priority = any(rel_posix.startswith(p) for p in PRIORITY_DIRS)
+        is_priority = any(rel_path.startswith(p) for p in PRIORITY_DIRS)
 
-        definitions = extract_ruby_definitions(content)
+        chunks = chunk_text(content)
+        for i, chunk in enumerate(chunks):
+            chunk_id = f"{rel_path}_{i}"
+            docs.append(f"File: {rel_path}\n\n{chunk}")
+            metadatas.append({"file": rel_path, "is_priority": is_priority})
+            ids.append(chunk_id)
 
-        index[rel_posix] = {
-            'path': rel_posix,
-            'size': len(content),
-            'lines': content.count('\n'),
-            'definitions': definitions,
-            # Only store full content for priority dirs to keep memory reasonable
-            'content': content if is_priority else None,
-            'is_priority': is_priority,
-        }
+    # Insert into ChromaDB in batches
+    batch_size = 50
+    for i in range(0, len(docs), batch_size):
+        collection.add(
+            documents=docs[i:i+batch_size],
+            metadatas=metadatas[i:i+batch_size],
+            ids=ids[i:i+batch_size]
+        )
 
-    return index
+def query_codebase(query: str, workspace_root: str, n_results: int = 5) -> list[dict]:
+    """Query the codebase for relevant chunks."""
+    index_workspace(workspace_root)
 
+    if collection.count() == 0:
+        return []
 
-def build_summary(index: dict) -> str:
-    """
-    Build a compact project summary string to always include in prompts.
-    Lists every file with its class name and key associations.
-    """
-    lines = ['## MMR-API Project Structure\n']
+    results = collection.query(
+        query_texts=[query],
+        n_results=n_results
+    )
 
-    # Group by top-level dir
-    groups: dict[str, list] = {}
-    for rel_path, meta in sorted(index.items()):
-        top = rel_path.split('/')[0] if '/' in rel_path else 'root'
-        groups.setdefault(top, []).append((rel_path, meta))
+    formatted_results = []
+    if results and results.get('documents') and len(results['documents']) > 0:
+        docs = results['documents'][0]
+        metas = results['metadatas'][0]
+        for idx in range(len(docs)):
+            formatted_results.append({
+                "content": docs[idx],
+                "file": metas[idx]["file"] if metas[idx] else "unknown"
+            })
 
-    for group, files in sorted(groups.items()):
-        lines.append(f'### {group}/')
-        for rel_path, meta in files:
-            defs = meta['definitions']
-            classes = [c['name'] for c in defs['classes']]
-            modules = defs['modules']
-            label = ', '.join(classes + modules) or Path(rel_path).stem
-            associations = []
-            if defs['belongs_to']:
-                associations.append('belongs_to: ' + ', '.join(defs['belongs_to']))
-            if defs['has_many']:
-                associations.append('has_many: ' + ', '.join(defs['has_many']))
-            assoc_str = ' | ' + ' | '.join(associations) if associations else ''
-            lines.append(f'  - `{rel_path}` → {label}{assoc_str}')
-        lines.append('')
-
-    return '\n'.join(lines)
+    return formatted_results

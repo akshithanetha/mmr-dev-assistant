@@ -146,3 +146,23 @@ Each object must have:
 Cover: model validations, service logic, controller actions, and edge cases where relevant.
 Use the actual class names from the project structure above.
 """
+
+
+def find_prompt(text: str, workspace_root: str = '') -> str:
+    ctx = _context(text, workspace_root)
+    return f"""{ctx}
+You are an expert Rails engineer assisting with the MMR API project.
+
+Find where the following is located or handled in the codebase:
+
+{text}
+
+Based on the retrieved context chunks above:
+### Locations
+List the specific files and classes/methods that match the request.
+Provide brief snippets or explanations of what they are doing.
+
+### Overview
+A short summary of how this functionality is implemented across the project.
+"""
+

@@ -8,12 +8,12 @@ from app.prompts import (
     refactor_prompt,
     explain_prompt,
     general_prompt,
+    find_prompt,
     apply_changes_prompt,
     generate_tests_prompt,
 )
 
 app = FastAPI()
-
 
 class PromptRequest(BaseModel):
     prompt: str
@@ -48,6 +48,7 @@ def ask(request: PromptRequest):
         "refactor": refactor_prompt,
         "explain": explain_prompt,
         "story":   general_prompt,
+        "find":    find_prompt,
     }
     prompt_fn = mode_map.get(request.mode, general_prompt)
     result = ask_llm(prompt_fn(request.prompt, request.workspace_root))

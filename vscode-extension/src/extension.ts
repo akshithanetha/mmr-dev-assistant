@@ -26,7 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 type ConversationState = 'idle' | 'awaiting_code_confirm' | 'awaiting_test_confirm';
-type Mode = 'feature' | 'refactor' | 'explain' | 'story';
+type Mode = 'feature' | 'refactor' | 'explain' | 'find' | 'story';
 
 class SidebarProvider implements vscode.WebviewViewProvider {
 	private _view?: vscode.WebviewView;
@@ -241,6 +241,7 @@ body { display:flex; flex-direction:column; height:100vh; font-family:var(--vsco
     <button class="mode-btn" data-mode="feature">📋 Feature</button>
     <button class="mode-btn" data-mode="refactor">🔧 Refactor</button>
     <button class="mode-btn" data-mode="explain">🔍 Explain</button>
+    <button class="mode-btn" data-mode="find">🔭 Find</button>
     <button class="mode-btn" data-mode="story">💬 Chat</button>
   </div>
   <div id="mode-hint"></div>
@@ -264,6 +265,7 @@ const modeConfig={
   feature:{hint:'Paste a feature story or describe a new requirement',placeholder:'As a user, I want to… so that…',chips:['Analyze impact on existing files','Estimate story points','List clarification questions','Suggest implementation approach']},
   refactor:{hint:'Paste code to refactor — or use selected code from the editor',placeholder:'Paste your Ruby / Rails code here…',chips:['Extract to service object','Improve readability','Optimize N+1 queries','Apply SOLID principles']},
   explain:{hint:'Paste any code snippet — or use selected code from the editor',placeholder:'Paste the code you want explained…',chips:['Explain step by step','Identify potential bugs','Summarise in one sentence','List dependencies used']},
+  find:{hint:'Search for code, models, or patterns semantically (RAG)',placeholder:'Find where user authentication is handled...',chips:['Find User model', 'Find where billing is calculated', 'Find API routes for reports']},
   story:{hint:'Ask anything about your codebase or development process',placeholder:'Ask a question…',chips:['What models exist?','How does auth work?','Explain Rails conventions','How to add a new endpoint?']}
 };
 function selectMode(mode){
